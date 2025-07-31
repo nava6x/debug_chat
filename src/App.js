@@ -660,3 +660,4 @@ export default function UltraMediaChatApp() {
     typeLabelReceived: {
       backgroundColor: '#f59e0b'
     }
+  };
