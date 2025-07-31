@@ -38,15 +38,6 @@ export default function UltraMediaChatApp() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Check for stored username on component mount
-  useEffect(() => {
-    const storedUsername = localStorage.getItem('chatUsername');
-    if (storedUsername) {
-      setUsername(storedUsername);
-      setIsUsernameSet(true);
-    }
-  }, []);
-
   // Initialize socket connection when username is set
   useEffect(() => {
     if (!isUsernameSet || !username) return;
@@ -156,7 +147,6 @@ export default function UltraMediaChatApp() {
       const cleanUsername = tempUsername.trim();
       setUsername(cleanUsername);
       setIsUsernameSet(true);
-      localStorage.setItem('chatUsername', cleanUsername);
     }
   };
 
@@ -242,7 +232,6 @@ export default function UltraMediaChatApp() {
       setNewMedia(null);
       setNewMediaPreview(null);
       setBufferSize(null);
-      setTargetUser('');
       setMediaType('');
       document.querySelector('input[type="file"]').value = '';
     }
@@ -260,404 +249,265 @@ export default function UltraMediaChatApp() {
   // Available users excluding current user
   const availableUsers = onlineUsers.filter(user => user.username !== username);
 
-  const styles = {
-    container: {
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      backgroundColor: '#f8fafc',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      overflow: 'hidden'
-    },
-    usernameModal: {
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 1000,
-      padding: '20px'
-    },
-    usernameCard: {
-      backgroundColor: 'white',
-      borderRadius: '16px',
-      padding: '32px',
-      boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-      maxWidth: '400px',
-      width: '100%',
-      textAlign: 'center'
-    },
-    usernameTitle: {
-      fontSize: '24px',
-      fontWeight: 'bold',
-      marginBottom: '8px',
-      color: '#1f2937'
-    },
-    usernameSubtitle: {
-      fontSize: '14px',
-      color: '#6b7280',
-      marginBottom: '24px'
-    },
-    usernameInput: {
-      width: '100%',
-      padding: '12px 16px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      fontSize: '16px',
-      marginBottom: '16px',
-      outline: 'none',
-      transition: 'border-color 0.2s'
-    },
-    usernameButton: {
-      width: '100%',
-      padding: '12px',
-      backgroundColor: '#3b82f6',
-      color: 'white',
-      border: 'none',
-      borderRadius: '12px',
-      fontSize: '16px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s'
-    },
-    header: {
-      backgroundColor: '#1e40af',
-      background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)',
-      color: 'white',
-      padding: '12px 16px',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-      flexShrink: 0
-    },
-    headerContent: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: '16px'
-    },
-    title: {
-      fontSize: window.innerWidth < 480 ? '18px' : '20px',
-      fontWeight: 'bold',
-      margin: 0,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px'
-    },
-    userInfo: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      fontSize: '14px'
-    },
-    username: {
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-      padding: '6px 12px',
-      borderRadius: '16px',
-      fontWeight: '500'
-    },
-    onlineCount: {
-      backgroundColor: '#10b981',
-      padding: '4px 8px',
-      borderRadius: '12px',
-      fontSize: '12px',
-      fontWeight: '600'
-    },
-    sidebar: {
-      backgroundColor: 'white',
-      borderBottom: '1px solid #e5e7eb',
-      padding: '12px 16px',
-      flexShrink: 0
-    },
-    onlineUsersTitle: {
-      fontSize: '14px',
-      fontWeight: '600',
-      color: '#374151',
-      marginBottom: '8px'
-    },
-    onlineUsersList: {
-      display: 'flex',
-      gap: '8px',
-      flexWrap: 'wrap'
-    },
-    onlineUser: {
-      backgroundColor: '#f3f4f6',
-      padding: '4px 8px',
-      borderRadius: '12px',
-      fontSize: '12px',
-      color: '#374151',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      border: '1px solid transparent'
-    },
-    onlineUserSelected: {
-      backgroundColor: '#dbeafe',
-      borderColor: '#3b82f6',
-      color: '#1d4ed8'
-    },
-    chatArea: {
-      flex: 1,
-      overflowY: 'auto',
-      padding: '16px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '12px',
-      minHeight: 0
-    },
-    mediaContainer: {
-      display: 'flex',
-      width: '100%'
-    },
-    mediaContainerSent: {
-      justifyContent: 'flex-end'
-    },
-    mediaContainerReceived: {
-      justifyContent: 'flex-start'
-    },
-    mediaCard: {
-      maxWidth: window.innerWidth < 480 ? '280px' : '320px',
-      backgroundColor: 'white',
-      borderRadius: '16px',
-      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-      padding: '12px',
-      position: 'relative',
-      border: '1px solid #f1f5f9'
-    },
-    mediaCardSent: {
-      background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-      borderColor: '#3b82f6'
-    },
-    mediaCardReceived: {
-      backgroundColor: 'white',
-      borderColor: '#e2e8f0'
-    },
-    mediaInfo: {
-      fontSize: '12px',
-      color: '#64748b',
-      marginBottom: '8px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      flexWrap: 'wrap',
-      gap: '4px'
-    },
-    mediaInfoSent: {
-      color: '#1e40af'
-    },
-    mediaPreview: {
-      width: '100%',
-      height: 'auto',
-      borderRadius: '12px',
-      border: '1px solid #e2e8f0',
-      maxHeight: '200px',
-      objectFit: 'contain'
-    },
-    videoPreview: {
-      width: '100%',
-      height: 'auto',
-      borderRadius: '12px',
-      maxHeight: '200px'
-    },
-    filePreview: {
-      padding: '16px',
-      backgroundColor: '#f8fafc',
-      borderRadius: '12px',
-      textAlign: 'center',
-      border: '2px dashed #cbd5e1'
-    },
-    fileName: {
-      fontSize: '14px',
-      fontWeight: '500',
-      color: '#374151',
-      marginTop: '8px',
-      wordBreak: 'break-word'
-    },
-    timestamp: {
-      fontSize: '10px',
-      color: '#94a3b8',
-      marginTop: '8px',
-      textAlign: 'right'
-    },
-    messageContainer: {
-      display: 'flex',
-      width: '100%',
-      justifyContent: 'center'
-    },
-    message: {
-      padding: '8px 16px',
-      borderRadius: '20px',
-      fontSize: '14px',
-      maxWidth: '300px',
-      textAlign: 'center'
-    },
-    messageSystem: {
-      backgroundColor: '#f1f5f9',
-      color: '#475569',
-      border: '1px solid #e2e8f0'
-    },
-    messageError: {
-      backgroundColor: '#fef2f2',
-      color: '#dc2626',
-      border: '1px solid #fecaca'
-    },
-    sendForm: {
-      backgroundColor: 'white',
-      borderTop: '1px solid #e5e7eb',
-      padding: '16px',
-      boxShadow: '0 -4px 12px rgba(0, 0, 0, 0.05)',
-      flexShrink: 0
-    },
-    formContent: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '12px'
-    },
-    targetUserSection: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      flexWrap: 'wrap'
-    },
-    targetUserDropdown: {
-      flex: 1,
-      minWidth: '150px',
-      position: 'relative'
-    },
-    targetUserButton: {
-      width: '100%',
-      padding: '8px 12px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      fontSize: '14px',
-      outline: 'none',
-      backgroundColor: 'white',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      transition: 'all 0.2s'
-    },
-    targetUserButtonSelected: {
-      borderColor: '#3b82f6',
-      backgroundColor: '#dbeafe',
-      color: '#1d4ed8'
-    },
-    dropdownMenu: {
-      position: 'absolute',
-      top: '100%',
-      left: 0,
-      right: 0,
-      marginTop: '4px',
-      backgroundColor: 'white',
-      border: '1px solid #e5e7eb',
-      borderRadius: '12px',
-      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
-      zIndex: 10,
-      maxHeight: '160px',
-      overflowY: 'auto'
-    },
-    dropdownItem: {
-      width: '100%',
-      padding: '10px 12px',
-      textAlign: 'left',
-      border: 'none',
-      backgroundColor: 'transparent',
-      cursor: 'pointer',
-      fontSize: '14px',
-      color: '#374151',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      borderBottom: '1px solid #f3f4f6',
-      transition: 'background-color 0.2s'
-    },
-    dropdownItemLast: {
-      borderBottom: 'none'
-    },
-    dropdownEmpty: {
-      padding: '12px',
-      textAlign: 'center',
-      color: '#6b7280',
-      fontSize: '14px',
-      fontStyle: 'italic'
-    },
-    clearButton: {
-      padding: '8px 12px',
-      backgroundColor: '#f3f4f6',
-      color: '#6b7280',
-      border: 'none',
-      borderRadius: '8px',
-      fontSize: '12px',
-      cursor: 'pointer',
-      transition: 'background-color 0.2s'
-    },
-    fileSection: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      flexWrap: window.innerWidth < 480 ? 'wrap' : 'nowrap'
-    },
-    fileInputContainer: {
-      flex: 1,
-      minWidth: window.innerWidth < 480 ? '100%' : '200px'
-    },
-    label: {
-      fontSize: '14px',
-      fontWeight: '500',
-      color: '#374151',
-      display: 'block',
-      marginBottom: '4px'
-    },
-    fileInput: {
-      width: '100%',
-      fontSize: '14px',
-      color: '#6b7280',
-      padding: '8px 12px',
-      border: '2px solid #e5e7eb',
-      borderRadius: '12px',
-      cursor: 'pointer',
-      backgroundColor: 'white'
-    },
-    preview: {
-      maxWidth: '80px',
-      maxHeight: '80px',
-      borderRadius: '8px',
-      border: '2px solid #e5e7eb',
-      objectFit: 'cover'
-    },
-    bufferInfo: {
-      fontSize: '12px',
-      color: '#64748b',
-      backgroundColor: '#f8fafc',
-      padding: '8px 12px',
-      borderRadius: '8px',
-      textAlign: 'center'
-    },
-    sendButton: {
-      padding: '12px 24px',
-      background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
-      color: 'white',
-      border: 'none',
-      borderRadius: '12px',
-      fontSize: '14px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      transition: 'all 0.2s',
-      minWidth: '120px'
-    },
-    typeLabel: {
-      fontSize: '10px',
-      fontWeight: 'bold',
-      padding: '2px 6px',
-      borderRadius: '8px',
-      color: 'white'
-    },
-    typeLabelSent: {
-      backgroundColor: '#10b981'
-    },
-    typeLabelReceived: {
-      backgroundColor: '#f59e0b'
-    }
-  };
+  // Username setup modal
+  if (!isUsernameSet) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-5">
+        <div className="bg-white rounded-2xl p-8 shadow-2xl max-w-md w-full text-center">
+          <h2 className="text-2xl font-bold mb-2 text-gray-800">Welcome to Ultra Media Chat! 👋</h2>
+          <p className="text-sm text-gray-600 mb-6">Please enter your username to get started</p>
+          <input
+            type="text"
+            placeholder="Enter your username..."
+            value={tempUsername}
+            onChange={(e) => setTempUsername(e.target.value)}
+            className="w-full p-3 border-2 border-gray-200 rounded-xl text-base mb-4 outline-none focus:border-blue-500 transition-colors"
+            onKeyPress={(e) => e.key === 'Enter' && handleUsernameSubmit()}
+            autoFocus
+          />
+          <button
+            onClick={handleUsernameSubmit}
+            className="w-full p-3 bg-blue-500 hover:bg-blue-600 text-white border-none rounded-xl text-base font-semibold cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!tempUsername.trim()}
+          >
+            Join Chat
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50 font-sans overflow-hidden">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-800 to-blue-600 text-white p-3 shadow-lg flex-shrink-0">
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="text-lg md:text-xl font-bold flex items-center gap-2">
+            🚀 Ultra Media Chat
+          </h1>
+          <div className="flex items-center gap-3 text-sm">
+            <div className="bg-white bg-opacity-20 px-3 py-1.5 rounded-full font-medium">
+              {username}
+            </div>
+            <div className="bg-green-500 px-2 py-1 rounded-full text-xs font-semibold">
+              {onlineUsers.length} online
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Online Users Section */}
+      <div className="bg-white border-b border-gray-200 p-3 flex-shrink-0">
+        <div className="text-sm font-semibold text-gray-700 mb-2">
+          Online Users ({availableUsers.length})
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {availableUsers.map((user) => (
+            <div
+              key={user.socketId}
+              className={`px-3 py-1.5 rounded-full text-xs cursor-pointer transition-all border ${
+                targetUser === user.username
+                  ? 'bg-blue-100 border-blue-500 text-blue-700'
+                  : 'bg-gray-100 border-transparent text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => handleUserSelect(user.username)}
+            >
+              🟢 {user.username}
+            </div>
+          ))}
+          {availableUsers.length === 0 && (
+            <div className="text-gray-500 text-sm italic">No other users online</div>
+          )}
+        </div>
+      </div>
+
+      {/* Chat Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3 min-h-0">
+        {/* System Messages */}
+        {messages.map((message, index) => (
+          <div key={`msg-${index}`} className="flex justify-center">
+            <div className={`px-4 py-2 rounded-full text-sm max-w-xs text-center ${
+              message.type === 'system' 
+                ? 'bg-gray-100 text-gray-600 border border-gray-200' 
+                : 'bg-red-50 text-red-600 border border-red-200'
+            }`}>
+              {message.content}
+              <div className="text-xs text-gray-400 mt-1">
+                {formatTime(message.timestamp)}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* All Media */}
+        {allMedia.map((media, index) => (
+          <div
+            key={`media-${index}`}
+            className={`flex w-full ${
+              media.type === 'sent' ? 'justify-end' : 'justify-start'
+            }`}
+          >
+            <div className={`max-w-sm rounded-2xl shadow-lg p-3 border ${
+              media.type === 'sent' 
+                ? 'bg-gradient-to-br from-blue-100 to-blue-200 border-blue-500' 
+                : 'bg-white border-gray-200'
+            }`}>
+              <div className={`text-xs mb-2 flex justify-between items-center flex-wrap gap-1 ${
+                media.type === 'sent' ? 'text-blue-800' : 'text-gray-600'
+              }`}>
+                <div>
+                  <span className={`px-2 py-0.5 rounded text-white text-xs font-bold ${
+                    media.type === 'sent' ? 'bg-green-500' : 'bg-yellow-500'
+                  }`}>
+                    {media.type === 'sent' ? 'SENT' : 'RECEIVED'}
+                  </span>
+                  <strong className="ml-1">{media.id}</strong>
+                </div>
+                <div>{formatBufferSize(media.size)}</div>
+              </div>
+              
+              {/* Media Preview */}
+              {media.mediaType.startsWith('image/') && media.url && (
+                <img
+                  src={media.url}
+                  alt={media.filename}
+                  className="w-full h-auto rounded-xl border border-gray-200 max-h-48 object-contain"
+                />
+              )}
+              
+              {media.mediaType.startsWith('video/') && media.url && (
+                <video
+                  src={media.url}
+                  controls
+                  className="w-full h-auto rounded-xl max-h-48"
+                />
+              )}
+              
+              {media.mediaType.startsWith('audio/') && media.url && (
+                <audio
+                  src={media.url}
+                  controls
+                  className="w-full"
+                />
+              )}
+              
+              {!media.mediaType.startsWith('image/') && 
+               !media.mediaType.startsWith('video/') && 
+               !media.mediaType.startsWith('audio/') && (
+                <div className="p-4 bg-gray-50 rounded-xl text-center border-2 border-dashed border-gray-300">
+                  <div className="text-3xl mb-2">
+                    {getMediaIcon(media.mediaType)}
+                  </div>
+                  <div className="text-sm font-medium text-gray-700 break-words">
+                    {media.filename}
+                  </div>
+                </div>
+              )}
+              
+              <div className="text-xs text-gray-400 mt-2 text-right">
+                {formatTime(media.timestamp)}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Send Media Form */}
+      <div className="bg-white border-t border-gray-200 p-4 shadow-lg flex-shrink-0">
+        <div className="flex flex-col gap-3">
+          {/* User Selection */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="text-sm font-medium text-gray-700">📤 Send to:</label>
+            <div className="flex-1 min-w-0 relative" ref={dropdownRef}>
+              <button
+                onClick={() => setShowUserDropdown(!showUserDropdown)}
+                className={`w-full p-2.5 border-2 rounded-xl text-sm text-left flex items-center justify-between transition-colors ${
+                  targetUser 
+                    ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                    : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300'
+                }`}
+              >
+                <span>{targetUser || 'Select a user...'}</span>
+                <span className="text-gray-400">▼</span>
+              </button>
+              
+              {showUserDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-40 overflow-y-auto">
+                  {availableUsers.length > 0 ? (
+                    availableUsers.map((user) => (
+                      <button
+                        key={user.socketId}
+                        onClick={() => handleUserSelect(user.username)}
+                        className="w-full p-2.5 text-left hover:bg-gray-50 transition-colors text-sm flex items-center gap-2 border-b border-gray-100 last:border-b-0"
+                      >
+                        🟢 {user.username}
+                      </button>
+                    ))
+                  ) : (
+                    <div className="p-3 text-gray-500 text-sm text-center">
+                      No users available
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {targetUser && (
+              <button
+                onClick={clearTargetUser}
+                className="px-3 py-2 text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          {/* File Selection */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <label className="block text-sm font-medium text-gray-700 mb-1">📎 Select Media:</label>
+              <input
+                type="file"
+                accept="*/*"
+                onChange={handleMediaChange}
+                className="w-full text-sm text-gray-600 p-2.5 border-2 border-gray-200 rounded-xl cursor-pointer bg-white hover:border-gray-300 transition-colors"
+              />
+            </div>
+            {newMediaPreview && (
+              mediaType.startsWith('image/') ? (
+                <img src={newMediaPreview} alt="Preview" className="w-16 h-16 rounded-lg border-2 border-gray-200 object-cover" />
+              ) : mediaType.startsWith('video/') ? (
+                <video src={newMediaPreview} className="w-16 h-16 rounded-lg border-2 border-gray-200 object-cover" muted />
+              ) : null
+            )}
+          </div>
+
+          {/* File Info */}
+          {bufferSize !== null && (
+            <div className="text-xs text-gray-600 bg-gray-50 p-3 rounded-lg text-center">
+              📊 File size: <strong>{formatBufferSize(bufferSize)}</strong>
+              {newMedia && (
+                <>
+                  {' • '}
+                  {getMediaIcon(mediaType)} <strong>{newMedia.filename}</strong>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Send Button */}
+          {newMedia && targetUser.trim().length > 0 && (
+            <button 
+              onClick={handleMediaSend} 
+              className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-none rounded-xl text-sm font-semibold cursor-pointer transition-all shadow-md hover:shadow-lg"
+            >
+              🚀 Send Media to {targetUser}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
