@@ -37,7 +37,7 @@ export default function UltraMediaChatApp() {
   useEffect(() => {
     if (!isUsernameSet || !username) return;
 
-    const newSocket = io('https://testprosses.onrender.com');
+    const newSocket = io('https://debug-chat-bnc.onrender.com');
     setSocket(newSocket);
 
     newSocket.on('connect', () => {
