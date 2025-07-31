@@ -14,7 +14,9 @@ export default function UltraMediaChatApp() {
   const [targetUser, setTargetUser] = useState('');
   const [messages, setMessages] = useState([]);
   const [allMedia, setAllMedia] = useState([]);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
   const messagesEndRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -23,6 +25,18 @@ export default function UltraMediaChatApp() {
   useEffect(() => {
     scrollToBottom();
   }, [allMedia, messages]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowUserDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Check for stored username on component mount
   useEffect(() => {
@@ -64,10 +78,19 @@ export default function UltraMediaChatApp() {
         content: `${data.username} left the chat`,
         timestamp: new Date()
       }]);
+      // Clear target user if they left
+      setTargetUser(prev => prev === data.username ? '' : prev);
     });
 
     newSocket.on('online_users', (users) => {
       setOnlineUsers(users);
+      // Clear target user if they're no longer online
+      setTargetUser(prev => {
+        if (prev && !users.some(user => user.username === prev)) {
+          return '';
+        }
+        return prev;
+      });
     });
 
     newSocket.on('get_media', (data) => {
@@ -135,6 +158,15 @@ export default function UltraMediaChatApp() {
       setIsUsernameSet(true);
       localStorage.setItem('chatUsername', cleanUsername);
     }
+  };
+
+  const handleUserSelect = (selectedUsername) => {
+    setTargetUser(selectedUsername);
+    setShowUserDropdown(false);
+  };
+
+  const clearTargetUser = () => {
+    setTargetUser('');
   };
 
   const formatBufferSize = (bytes) => {
@@ -224,6 +256,9 @@ export default function UltraMediaChatApp() {
       second: '2-digit' 
     });
   };
+
+  // Available users excluding current user
+  const availableUsers = onlineUsers.filter(user => user.username !== username);
 
   const styles = {
     container: {
@@ -485,14 +520,78 @@ export default function UltraMediaChatApp() {
       gap: '8px',
       flexWrap: 'wrap'
     },
-    targetUserInput: {
+    targetUserDropdown: {
       flex: 1,
       minWidth: '150px',
+      position: 'relative'
+    },
+    targetUserButton: {
+      width: '100%',
       padding: '8px 12px',
       border: '2px solid #e5e7eb',
       borderRadius: '12px',
       fontSize: '14px',
-      outline: 'none'
+      outline: 'none',
+      backgroundColor: 'white',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      transition: 'all 0.2s'
+    },
+    targetUserButtonSelected: {
+      borderColor: '#3b82f6',
+      backgroundColor: '#dbeafe',
+      color: '#1d4ed8'
+    },
+    dropdownMenu: {
+      position: 'absolute',
+      top: '100%',
+      left: 0,
+      right: 0,
+      marginTop: '4px',
+      backgroundColor: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: '12px',
+      boxShadow: '0 10px 40px rgba(0, 0, 0, 0.15)',
+      zIndex: 10,
+      maxHeight: '160px',
+      overflowY: 'auto'
+    },
+    dropdownItem: {
+      width: '100%',
+      padding: '10px 12px',
+      textAlign: 'left',
+      border: 'none',
+      backgroundColor: 'transparent',
+      cursor: 'pointer',
+      fontSize: '14px',
+      color: '#374151',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      borderBottom: '1px solid #f3f4f6',
+      transition: 'background-color 0.2s'
+    },
+    dropdownItemLast: {
+      borderBottom: 'none'
+    },
+    dropdownEmpty: {
+      padding: '12px',
+      textAlign: 'center',
+      color: '#6b7280',
+      fontSize: '14px',
+      fontStyle: 'italic'
+    },
+    clearButton: {
+      padding: '8px 12px',
+      backgroundColor: '#f3f4f6',
+      color: '#6b7280',
+      border: 'none',
+      borderRadius: '8px',
+      fontSize: '12px',
+      cursor: 'pointer',
+      transition: 'background-color 0.2s'
     },
     fileSection: {
       display: 'flex',
@@ -561,219 +660,3 @@ export default function UltraMediaChatApp() {
     typeLabelReceived: {
       backgroundColor: '#f59e0b'
     }
-  };
-
-  // Username setup modal
-  if (!isUsernameSet) {
-    return (
-      <div style={styles.usernameModal}>
-        <div style={styles.usernameCard}>
-          <h2 style={styles.usernameTitle}>Welcome to Ultra Media Chat! 👋</h2>
-          <p style={styles.usernameSubtitle}>Please enter your username to get started</p>
-          <input
-            type="text"
-            placeholder="Enter your username..."
-            value={tempUsername}
-            onChange={(e) => setTempUsername(e.target.value)}
-            style={styles.usernameInput}
-            onKeyPress={(e) => e.key === 'Enter' && handleUsernameSubmit()}
-            autoFocus
-          />
-          <button
-            onClick={handleUsernameSubmit}
-            style={styles.usernameButton}
-            disabled={!tempUsername.trim()}
-          >
-            Join Chat
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header}>
-        <div style={styles.headerContent}>
-          <h1 style={styles.title}>
-            🚀 Ultra Media Chat
-          </h1>
-          <div style={styles.userInfo}>
-            <div style={styles.username}>{username}</div>
-            <div style={styles.onlineCount}>
-              {onlineUsers.length} online
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Online Users */}
-      <div style={styles.sidebar}>
-        <div style={styles.onlineUsersTitle}>Online Users ({onlineUsers.length})</div>
-        <div style={styles.onlineUsersList}>
-          {onlineUsers.map((user) => (
-            <div
-              key={user.socketId}
-              style={{
-                ...styles.onlineUser,
-                ...(targetUser === user.username ? styles.onlineUserSelected : {})
-              }}
-              onClick={() => setTargetUser(user.username)}
-            >
-              🟢 {user.username}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Chat Messages Area */}
-      <div style={styles.chatArea}>
-        {/* System Messages */}
-        {messages.map((message, index) => (
-          <div key={`msg-${index}`} style={styles.messageContainer}>
-            <div
-              style={{
-                ...styles.message,
-                ...(message.type === 'system' ? styles.messageSystem : styles.messageError)
-              }}
-            >
-              {message.content}
-              <div style={styles.timestamp}>
-                {formatTime(message.timestamp)}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* All Media */}
-        {allMedia.map((media, index) => (
-          <div
-            key={`media-${index}`}
-            style={{
-              ...styles.mediaContainer,
-              ...(media.type === 'sent' ? styles.mediaContainerSent : styles.mediaContainerReceived)
-            }}
-          >
-            <div
-              style={{
-                ...styles.mediaCard,
-                ...(media.type === 'sent' ? styles.mediaCardSent : styles.mediaCardReceived)
-              }}
-            >
-              <div style={{
-                ...styles.mediaInfo,
-                ...(media.type === 'sent' ? styles.mediaInfoSent : {})
-              }}>
-                <div>
-                  <span style={{
-                    ...styles.typeLabel,
-                    ...(media.type === 'sent' ? styles.typeLabelSent : styles.typeLabelReceived)
-                  }}>
-                    {media.type === 'sent' ? 'SENT' : 'RECEIVED'}
-                  </span>
-                  <strong> {media.id}</strong>
-                </div>
-                <div>{formatBufferSize(media.size)}</div>
-              </div>
-              
-              {/* Media Preview */}
-              {media.mediaType.startsWith('image/') && media.url && (
-                <img
-                  src={media.url}
-                  alt={media.filename}
-                  style={styles.mediaPreview}
-                />
-              )}
-              
-              {media.mediaType.startsWith('video/') && media.url && (
-                <video
-                  src={media.url}
-                  controls
-                  style={styles.videoPreview}
-                />
-              )}
-              
-              {media.mediaType.startsWith('audio/') && media.url && (
-                <audio
-                  src={media.url}
-                  controls
-                  style={{ width: '100%' }}
-                />
-              )}
-              
-              {!media.mediaType.startsWith('image/') && 
-               !media.mediaType.startsWith('video/') && 
-               !media.mediaType.startsWith('audio/') && (
-                <div style={styles.filePreview}>
-                  <div style={{ fontSize: '32px' }}>
-                    {getMediaIcon(media.mediaType)}
-                  </div>
-                  <div style={styles.fileName}>{media.filename}</div>
-                </div>
-              )}
-              
-              <div style={styles.timestamp}>
-                {formatTime(media.timestamp)}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Send Media Form */}
-      <div style={styles.sendForm}>
-        <div style={styles.formContent}>
-          <div style={styles.targetUserSection}>
-            <label style={styles.label}>📤 Send to:</label>
-            <input
-              type="text"
-              placeholder="Username..."
-              value={targetUser}
-              onChange={(e) => setTargetUser(e.target.value)}
-              style={styles.targetUserInput}
-            />
-          </div>
-
-          <div style={styles.fileSection}>
-            <div style={styles.fileInputContainer}>
-              <label style={styles.label}>📎 Select Media:</label>
-              <input
-                type="file"
-                accept="*/*"
-                onChange={handleMediaChange}
-                style={styles.fileInput}
-              />
-            </div>
-            {newMediaPreview && (
-              mediaType.startsWith('image/') ? (
-                <img src={newMediaPreview} alt="Preview" style={styles.preview} />
-              ) : mediaType.startsWith('video/') ? (
-                <video src={newMediaPreview} style={styles.preview} muted />
-              ) : null
-            )}
-          </div>
-
-          {bufferSize !== null && (
-            <div style={styles.bufferInfo}>
-              📊 File size: <strong>{formatBufferSize(bufferSize)}</strong>
-              {newMedia && (
-                <>
-                  {' • '}
-                  {getMediaIcon(mediaType)} <strong>{newMedia.filename}</strong>
-                </>
-              )}
-            </div>
-          )}
-
-          {newMedia && targetUser.trim().length > 0 && (
-            <button onClick={handleMediaSend} style={styles.sendButton}>
-              🚀 Send Media
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
